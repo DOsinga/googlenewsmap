@@ -1,0 +1,75 @@
+<script type="text/markdown" id="info">
+name: Google News Map
+description: >
+  Pin live Google News headlines on a world map. Locations are
+  extracted from each headline with a small NER model and resolved
+  against the GeoNames gazetteer. Based on the original from 2004
+type: hacks
+github: googlenewsmap
+files:
+  - [original_newsmap.py, "Original 2004 Tkinter desktop version — scraped Google News HTML and pinned headlines on a worldmap.gif using a hand-compiled keywords.txt of country coordinates."]
+blog: 2026/0526
+</script>
+
+{% if not embed %}
+<p>
+  Live headlines from Google News, pinned at the place each story is about.
+  Click a marker to read the article.
+</p>
+{% endif %}
+
+<style>
+  #googlenewsmap-wrap { position: relative; }
+  #googlenewsmap-zoom { position: absolute; top: 8px; right: 8px; display: flex; flex-direction: column; gap: 4px; z-index: 2; }
+  #googlenewsmap-zoom button {
+    width: 28px; height: 28px; font-size: 18px; line-height: 1; padding: 0;
+    border: 1px solid #bbb; background: rgba(255,255,255,0.9); cursor: pointer; border-radius: 3px;
+  }
+  #googlenewsmap-zoom button:hover { background: #fff; }
+</style>
+
+<div id="googlenewsmap-wrap" style="margin: 1em 0;">
+  {{ plot_html|safe }}
+  <div id="googlenewsmap-zoom">
+    <button type="button" id="googlenewsmap-zoom-in" title="Zoom in">+</button>
+    <button type="button" id="googlenewsmap-zoom-out" title="Zoom out">−</button>
+  </div>
+</div>
+
+{% if not embed %}
+<p style="color:#666; font-size:90%;">
+  Showing {{ plotted_count }} geolocated headlines from the last
+  {{ window_hours }}&nbsp;hours. Feed last refreshed {{ last_fetched_human }}.
+</p>
+
+<p style="color:#888; font-size:85%; margin-top: 2em;">
+  This is the 2026 rewrite. The 2004 original was a Tkinter desktop
+  program: it scraped Google News HTML directly and pinned headlines
+  on a static worldmap.gif using a hand-compiled keywords.txt of
+  country coordinates. The full original is available as a
+  <a href="{{ static }}original_newsmap.py">downloadable Python file</a> above.
+</p>
+{% endif %}
+
+<script>
+(function () {
+  var plot = document.getElementById("googlenewsmap_plot");
+  if (!plot) return;
+  function attach() {
+    if (!plot.on) return setTimeout(attach, 50);
+    plot.on("plotly_click", function (data) {
+      var pt = data.points && data.points[0];
+      if (pt && pt.customdata) window.open(pt.customdata, "_blank");
+    });
+  }
+  attach();
+
+  var scale = 1;
+  function zoom(factor) {
+    scale = Math.max(0.5, Math.min(20, scale * factor));
+    Plotly.relayout(plot, {"geo.projection.scale": scale});
+  }
+  document.getElementById("googlenewsmap-zoom-in").addEventListener("click", function () { zoom(1.3); });
+  document.getElementById("googlenewsmap-zoom-out").addEventListener("click", function () { zoom(1/1.3); });
+})();
+</script>
